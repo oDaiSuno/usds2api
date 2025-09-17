@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  ustc_api:
+    build: .
+    container_name: ustc_api
+    command: ["python", "main.py"]
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - ustcds_net
+
+  format_proxy:
+    build: .
+    container_name: format_proxy
+    depends_on:
+      - ustc_api
+    command: ["python", "format_proxy_enhanced.py"]
+    environment:
+      - PYTHONPATH=/app
+      # 上游服务配置
+      - FORMAT_PROXY_UPSTREAM_URL=http://ustc_api:8010/v1
+      - FORMAT_PROXY_UPSTREAM_NAME=ustcds
+      # 服务器配置
+      - FORMAT_PROXY_SERVER_HOST=0.0.0.0
+      - FORMAT_PROXY_SERVER_PORT=8021
+      - FORMAT_PROXY_SERVER_TIMEOUT=180.0
+      # 功能配置
+      - FORMAT_PROXY_FEATURE_ENABLE_FUNCTION_CALLING=true
+      - FORMAT_PROXY_FEATURE_CONVERT_DEVELOPER_TO_SYSTEM=true
+      - FORMAT_PROXY_FEATURE_LOG_LEVEL=INFO
+      - FORMAT_PROXY_FEATURE_RANDOM_TRIGGER=true
+    volumes:
+      - .:/app
+    ports:
+      - "8021:8021"
+    networks:
+      - ustcds_net
+
+networks:
+  ustcds_net:
+    driver: bridge
